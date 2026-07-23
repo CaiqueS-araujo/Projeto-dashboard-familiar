@@ -6,6 +6,10 @@ export default {
     extend: {
       colors: {
         vault: {
+          100: '#EAF2ED',
+          200: '#C7DACD',
+          300: '#9DBBA8',
+          400: '#6E9A80',
           950: '#06140F',
           900: '#0A1F17',
           800: '#0F2E21',
