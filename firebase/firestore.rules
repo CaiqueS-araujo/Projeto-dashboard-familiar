@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Troque pelo e-mail real de vocês (o mesmo do Firebase Auth e do
+    // USER_DIRECTORY em src/firebase.js). Só esse e-mail consegue ler ou
+    // escrever no banco — vocês dois usam o mesmo login pra entrar.
+    // Esta é a barreira de verdade: mesmo que alguém mexa no código do site
+    // no navegador, o servidor do Firestore recusa qualquer leitura ou
+    // escrita de quem não estiver autenticado com esse e-mail.
+    function isFamilia() {
+      return request.auth != null &&
+        request.auth.token.email in [
+          'teamocarol@gmail.com'
+        ];
+    }
+
+    match /transactions/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /categories/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /goals/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /recurring/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /settings/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /investments/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /workouts/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /gymLogs/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    match /groceryItems/{docId} {
+      allow read, write: if isFamilia();
+    }
+
+    // Bloqueia qualquer outra coleção por padrão.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
