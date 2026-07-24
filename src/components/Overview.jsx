@@ -175,66 +175,70 @@ export default function Overview({
         <p className="text-vault-600 dark:text-vault-300 text-sm">Resumo do mês</p>
       </div>
 
-      <div className="bg-vault-900 border border-white/5 rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display text-lg text-white">Hábitos de hoje</h3>
-          {gymStreak > 0 && (
-            <span className="flex items-center gap-1 text-xs text-gold-400 font-medium">
-              <Flame className="w-3.5 h-3.5" />
-              {gymStreak} treinos seguidos
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-4 lg:items-start">
+        <div className="lg:col-span-2 bg-vault-900 border border-white/5 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-lg text-white">Hábitos de hoje</h3>
+            {gymStreak > 0 && (
+              <span className="flex items-center gap-1 text-xs text-gold-400 font-medium">
+                <Flame className="w-3.5 h-3.5" />
+                {gymStreak} treinos seguidos
+              </span>
+            )}
+          </div>
+          {myHabits.length === 0 ? (
+            <p className="text-sm text-vault-500">
+              Nenhum hábito cadastrado ainda — crie um na aba Conquistas.
+            </p>
+          ) : pendingHabits.length === 0 ? (
+            <p className="text-sm text-gold-400 font-medium">Tudo feito por hoje! 🎉</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
+              {pendingHabits.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => onToggleHabit(today, h.id, actor, true)}
+                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-left transition bg-white/5 text-vault-300 hover:bg-white/10"
+                >
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/20" />
+                  <span className="flex-1 font-medium">{h.name}</span>
+                  {h.scope === 'family' && <Users className="w-3.5 h-3.5 text-vault-500 flex-shrink-0" />}
+                </button>
+              ))}
+            </div>
+          )}
+          {doneHabitsToday.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-3">
+              {doneHabitsToday.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => onToggleHabit(today, h.id, actor, false)}
+                  className="flex items-center gap-1.5 text-xs text-vault-500 hover:text-vault-300 transition"
+                  title="Toque pra desmarcar"
+                >
+                  <Check className="w-3 h-3 text-gold-500" strokeWidth={3} />
+                  <span className="line-through">{h.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {myHabits.length > 0 && (
+            <p className="text-xs text-vault-500 pt-3">{habitsDoneToday} de {myHabits.length} feitos hoje</p>
           )}
         </div>
-        {myHabits.length === 0 ? (
-          <p className="text-sm text-vault-500">
-            Nenhum hábito cadastrado ainda — crie um na aba Conquistas.
-          </p>
-        ) : pendingHabits.length === 0 ? (
-          <p className="text-sm text-gold-400 font-medium">Tudo feito por hoje! 🎉</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-1.5">
-            {pendingHabits.map((h) => (
-              <button
-                key={h.id}
-                onClick={() => onToggleHabit(today, h.id, actor, true)}
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-left transition bg-white/5 text-vault-300 hover:bg-white/10"
-              >
-                <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/20" />
-                <span className="flex-1 font-medium">{h.name}</span>
-                {h.scope === 'family' && <Users className="w-3.5 h-3.5 text-vault-500 flex-shrink-0" />}
-              </button>
-            ))}
-          </div>
-        )}
-        {doneHabitsToday.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-3">
-            {doneHabitsToday.map((h) => (
-              <button
-                key={h.id}
-                onClick={() => onToggleHabit(today, h.id, actor, false)}
-                className="flex items-center gap-1.5 text-xs text-vault-500 hover:text-vault-300 transition"
-                title="Toque pra desmarcar"
-              >
-                <Check className="w-3 h-3 text-gold-500" strokeWidth={3} />
-                <span className="line-through">{h.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-        {myHabits.length > 0 && (
-          <p className="text-xs text-vault-500 pt-3">{habitsDoneToday} de {myHabits.length} feitos hoje</p>
-        )}
-      </div>
 
-      <MonthOverviewCalendar
-        month={month}
-        year={year}
-        gymLogs={gymLogs}
-        habits={habits}
-        habitLogs={habitLogs}
-        recurring={recurring}
-        transactions={transactions}
-      />
+        <div className="lg:col-span-3">
+          <MonthOverviewCalendar
+            month={month}
+            year={year}
+            gymLogs={gymLogs}
+            habits={habits}
+            habitLogs={habitLogs}
+            recurring={recurring}
+            transactions={transactions}
+          />
+        </div>
+      </div>
 
       <div className="md:hidden bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl p-4">
         <p className="text-vault-500 dark:text-vault-400 text-[11px] uppercase tracking-wide mb-2">Quem lançou este mês</p>
@@ -247,6 +251,7 @@ export default function Overview({
           <span>Carol {actorSplit(monthTx).carol}%</span>
         </div>
       </div>
+
 
       {overBudgetCount > 0 && (
         <div className="flex items-center gap-2.5 bg-coral-500/10 border border-coral-500/25 rounded-xl px-4 py-3 text-sm text-coral-500">
