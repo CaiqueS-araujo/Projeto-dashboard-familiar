@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   collection,
   onSnapshot,
@@ -92,6 +92,7 @@ export function useTransactions() {
 export function useCategories() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
   const [loading, setLoading] = useState(true)
+  const seededRef = useRef(false)
 
   useEffect(() => {
     const q = query(collection(db, 'categories'), orderBy('name', 'asc'))
@@ -99,6 +100,20 @@ export function useCategories() {
       q,
       (snap) => {
         if (snap.empty) {
+          // As categorias padrão só existiam localmente, nunca tinham sido
+          // salvas de verdade no banco — por isso "apagar" ou "renomear"
+          // não tinha efeito (o app achava o documento e não encontrava
+          // nada pra apagar/mudar). Aqui elas são gravadas de verdade, uma
+          // única vez, mantendo os mesmos ids, pra virarem categorias reais.
+          if (!seededRef.current) {
+            seededRef.current = true
+            const batch = writeBatch(db)
+            DEFAULT_CATEGORIES.forEach((c) => {
+              const { id, ...data } = c
+              batch.set(doc(db, 'categories', id), data)
+            })
+            batch.commit().catch((err) => console.error('Erro ao criar categorias padrão:', err))
+          }
           setCategories(DEFAULT_CATEGORIES)
         } else {
           setCategories(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
@@ -117,11 +132,15 @@ export function useCategories() {
     return addDoc(collection(db, 'categories'), data)
   }
 
+  async function editCategory(id, data) {
+    return updateDoc(doc(db, 'categories', id), data)
+  }
+
   async function deleteCategory(id) {
     return deleteDoc(doc(db, 'categories', id))
   }
 
-  return { categories, loading, addCategory, deleteCategory }
+  return { categories, loading, addCategory, editCategory, deleteCategory }
 }
 
 export function useGoals() {

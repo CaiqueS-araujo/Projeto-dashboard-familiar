@@ -70,7 +70,7 @@ export default function TransactionsView({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar lançamento..."
-            className="w-full bg-white border border-vault-900/10 dark:border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gold-500"
+            className="w-full bg-white dark:bg-vault-800 dark:text-white border border-vault-900/10 dark:border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-gold-500"
           />
         </div>
         <div className="flex gap-1.5">
@@ -81,7 +81,7 @@ export default function TransactionsView({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${
                 filterType === f
                   ? 'bg-vault-900 text-white'
-                  : 'bg-white text-vault-600 border border-vault-900/10 dark:border-white/15'
+                  : 'bg-white dark:bg-vault-800 text-vault-600 dark:text-vault-200 border border-vault-900/10 dark:border-white/15'
               }`}
             >
               {f}

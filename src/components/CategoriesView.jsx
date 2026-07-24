@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check } from 'lucide-react'
 import { formatBRL } from '../utils/format'
 
 const PALETTE = ['#276B4A', '#D4AF5A', '#E27D5F', '#7C5CBF', '#3E8EDE', '#C9622E', '#9A9A4F', '#4F7A5E']
 
-export default function CategoriesView({ categories, budgets, onAdd, onDelete, onSetBudget }) {
+export default function CategoriesView({ categories, budgets, onAdd, onEdit, onDelete, onSetBudget }) {
   const [name, setName] = useState('')
   const [type, setType] = useState('despesa')
   const [color, setColor] = useState(PALETTE[0])
@@ -68,25 +68,38 @@ export default function CategoriesView({ categories, budgets, onAdd, onDelete, o
       </form>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <CategoryGroup title="Despesas" items={despesas} onDelete={onDelete} budgets={budgets} onSetBudget={onSetBudget} />
-        <CategoryGroup title="Receitas" items={receitas} onDelete={onDelete} />
+        <CategoryGroup title="Despesas" items={despesas} onEdit={onEdit} onDelete={onDelete} budgets={budgets} onSetBudget={onSetBudget} />
+        <CategoryGroup title="Receitas" items={receitas} onEdit={onEdit} onDelete={onDelete} />
       </div>
     </div>
   )
 }
 
-function CategoryGroup({ title, items, onDelete, budgets, onSetBudget }) {
-  const [editing, setEditing] = useState(null)
-  const [draft, setDraft] = useState('')
+function CategoryGroup({ title, items, onEdit, onDelete, budgets, onSetBudget }) {
+  const [editingBudget, setEditingBudget] = useState(null)
+  const [budgetDraft, setBudgetDraft] = useState('')
+  const [editingName, setEditingName] = useState(null)
+  const [nameDraft, setNameDraft] = useState('')
 
-  function startEdit(cat) {
-    setEditing(cat.id)
-    setDraft(budgets?.[cat.id] ? String(budgets[cat.id]) : '')
+  function startEditBudget(cat) {
+    setEditingBudget(cat.id)
+    setBudgetDraft(budgets?.[cat.id] ? String(budgets[cat.id]) : '')
   }
 
-  async function commitEdit(catId) {
-    await onSetBudget(catId, Number(String(draft).replace(',', '.')))
-    setEditing(null)
+  async function commitEditBudget(catId) {
+    await onSetBudget(catId, Number(String(budgetDraft).replace(',', '.')))
+    setEditingBudget(null)
+  }
+
+  function startEditName(cat) {
+    setEditingName(cat.id)
+    setNameDraft(cat.name)
+  }
+
+  async function commitEditName(catId) {
+    const trimmed = nameDraft.trim()
+    setEditingName(null)
+    if (trimmed) await onEdit(catId, { name: trimmed })
   }
 
   return (
@@ -95,26 +108,43 @@ function CategoryGroup({ title, items, onDelete, budgets, onSetBudget }) {
       <div className="space-y-1">
         {items.map((c) => (
           <div key={c.id} className="flex items-center justify-between py-2 group gap-2">
-            <span className="flex items-center gap-2.5 text-sm text-vault-800 dark:text-vault-100 min-w-0 truncate">
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
-              {c.name}
-            </span>
+            {editingName === c.id ? (
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                <input
+                  autoFocus
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onBlur={() => commitEditName(c.id)}
+                  onKeyDown={(e) => e.key === 'Enter' && commitEditName(c.id)}
+                  className="min-w-0 flex-1 text-sm border border-gold-500 rounded-md px-2 py-1 outline-none bg-white dark:bg-vault-800 dark:text-white"
+                />
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => commitEditName(c.id)} className="text-gold-600 dark:text-gold-400 flex-shrink-0">
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <span className="flex items-center gap-2.5 text-sm text-vault-800 dark:text-vault-100 min-w-0 truncate">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                {c.name}
+              </span>
+            )}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {onSetBudget && (
-                editing === c.id ? (
+              {onSetBudget && editingName !== c.id && (
+                editingBudget === c.id ? (
                   <input
                     autoFocus
                     inputMode="decimal"
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onBlur={() => commitEdit(c.id)}
-                    onKeyDown={(e) => e.key === 'Enter' && commitEdit(c.id)}
+                    value={budgetDraft}
+                    onChange={(e) => setBudgetDraft(e.target.value)}
+                    onBlur={() => commitEditBudget(c.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && commitEditBudget(c.id)}
                     placeholder="Sem limite"
                     className="w-24 text-xs border border-vault-900/10 dark:border-white/15 rounded-md px-2 py-1 outline-none focus:border-gold-500 bg-white dark:bg-vault-800 dark:text-white"
                   />
                 ) : (
                   <button
-                    onClick={() => startEdit(c)}
+                    onClick={() => startEditBudget(c)}
                     className="text-xs text-vault-500 hover:text-gold-600 dark:hover:text-gold-400 transition"
                     title="Definir orçamento mensal"
                   >
@@ -122,13 +152,23 @@ function CategoryGroup({ title, items, onDelete, budgets, onSetBudget }) {
                   </button>
                 )
               )}
-              {c.userCreated !== false && (
-                <button
-                  onClick={() => onDelete(c.id)}
-                  className="opacity-0 group-hover:opacity-100 text-vault-400 hover:text-coral-500 transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+              {editingName !== c.id && (
+                <>
+                  <button
+                    onClick={() => startEditName(c)}
+                    className="opacity-0 group-hover:opacity-100 text-vault-400 hover:text-gold-600 dark:hover:text-gold-400 transition"
+                    title="Renomear categoria"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(c.id)}
+                    className="opacity-0 group-hover:opacity-100 text-vault-400 hover:text-coral-500 transition"
+                    title="Excluir categoria"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
               )}
             </div>
           </div>

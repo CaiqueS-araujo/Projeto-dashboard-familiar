@@ -16,6 +16,7 @@ import { formatBRL, monthLabel, actorSplit } from '../utils/format'
 import { useDarkMode } from '../hooks/useDarkMode'
 import { ACTORS } from '../contexts/ActorContext'
 import { getGymStreak } from '../utils/achievements'
+import MonthOverviewCalendar from './MonthOverviewCalendar'
 
 function Card({ label, value, icon: Icon, tone }) {
   const tones = {
@@ -37,7 +38,7 @@ function Card({ label, value, icon: Icon, tone }) {
 
 export default function Overview({
   transactions, categories, budgets, gymLogs, month, year,
-  habits, habitLogs, onToggleHabit, actor, actorName,
+  habits, habitLogs, onToggleHabit, actor, actorName, recurring,
 }) {
   const [range, setRange] = useState(6)
   const [isDark] = useDarkMode()
@@ -158,10 +159,12 @@ export default function Overview({
     () => (habits || []).filter((h) => h.scope === 'family' || h.owner === actor),
     [habits, actor]
   )
-  const habitsDoneToday = (habitLogs || []).filter((l) => l.date === today && l.person === actor).length
   function isHabitDone(habitId) {
     return (habitLogs || []).some((l) => l.date === today && l.habitId === habitId && l.person === actor)
   }
+  const pendingHabits = myHabits.filter((h) => !isHabitDone(h.id))
+  const doneHabitsToday = myHabits.filter((h) => isHabitDone(h.id))
+  const habitsDoneToday = doneHabitsToday.length
   const gymStreak = getGymStreak(gymLogs || [], actor)
 
 
@@ -186,36 +189,52 @@ export default function Overview({
           <p className="text-sm text-vault-500">
             Nenhum hábito cadastrado ainda — crie um na aba Conquistas.
           </p>
+        ) : pendingHabits.length === 0 ? (
+          <p className="text-sm text-gold-400 font-medium">Tudo feito por hoje! 🎉</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-1.5">
-            {myHabits.map((h) => {
-              const done = isHabitDone(h.id)
-              return (
-                <button
-                  key={h.id}
-                  onClick={() => onToggleHabit(today, h.id, actor, !done)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-left transition ${
-                    done ? 'bg-gold-500/15 text-white' : 'bg-white/5 text-vault-300'
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition ${
-                      done ? 'bg-gold-500 border-gold-500 text-vault-950' : 'border-white/20'
-                    }`}
-                  >
-                    {done && <Check className="w-3 h-3" strokeWidth={3} />}
-                  </span>
-                  <span className="flex-1 font-medium">{h.name}</span>
-                  {h.scope === 'family' && <Users className="w-3.5 h-3.5 text-vault-500 flex-shrink-0" />}
-                </button>
-              )
-            })}
+            {pendingHabits.map((h) => (
+              <button
+                key={h.id}
+                onClick={() => onToggleHabit(today, h.id, actor, true)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-left transition bg-white/5 text-vault-300 hover:bg-white/10"
+              >
+                <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/20" />
+                <span className="flex-1 font-medium">{h.name}</span>
+                {h.scope === 'family' && <Users className="w-3.5 h-3.5 text-vault-500 flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+        )}
+        {doneHabitsToday.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-3">
+            {doneHabitsToday.map((h) => (
+              <button
+                key={h.id}
+                onClick={() => onToggleHabit(today, h.id, actor, false)}
+                className="flex items-center gap-1.5 text-xs text-vault-500 hover:text-vault-300 transition"
+                title="Toque pra desmarcar"
+              >
+                <Check className="w-3 h-3 text-gold-500" strokeWidth={3} />
+                <span className="line-through">{h.name}</span>
+              </button>
+            ))}
           </div>
         )}
         {myHabits.length > 0 && (
           <p className="text-xs text-vault-500 pt-3">{habitsDoneToday} de {myHabits.length} feitos hoje</p>
         )}
       </div>
+
+      <MonthOverviewCalendar
+        month={month}
+        year={year}
+        gymLogs={gymLogs}
+        habits={habits}
+        habitLogs={habitLogs}
+        recurring={recurring}
+        transactions={transactions}
+      />
 
       <div className="md:hidden bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl p-4">
         <p className="text-vault-500 dark:text-vault-400 text-[11px] uppercase tracking-wide mb-2">Quem lançou este mês</p>

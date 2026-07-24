@@ -76,7 +76,7 @@ export default function Dashboard() {
   const [year, setYear] = useState(now.getFullYear())
 
   const { transactions, addTransaction, addInstallmentPurchase, updateTransaction, deleteTransaction } = useTransactions()
-  const { categories, addCategory, deleteCategory } = useCategories()
+  const { categories, addCategory, editCategory, deleteCategory } = useCategories()
   const { goals, addGoal, updateGoal, deleteGoal } = useGoals()
   const { budgets, setBudget } = useBudgets()
   const { recurring, addRecurring, toggleRecurring, deleteRecurring } = useRecurring()
@@ -169,6 +169,7 @@ export default function Dashboard() {
               onToggleHabit={toggleHabit}
               actor={actor}
               actorName={actorName}
+              recurring={recurring}
             />
           )}
           {active === 'transactions' && (
@@ -192,7 +193,7 @@ export default function Dashboard() {
             />
           )}
           {active === 'categories' && (
-            <CategoriesView categories={categories} budgets={budgets} onAdd={addCategory} onDelete={deleteCategory} onSetBudget={setBudget} />
+            <CategoriesView categories={categories} budgets={budgets} onAdd={addCategory} onEdit={editCategory} onDelete={deleteCategory} onSetBudget={setBudget} />
           )}
           {active === 'goals' && (
             <GoalsView goals={goals} onAdd={addGoal} onUpdate={updateGoal} onDelete={deleteGoal} />

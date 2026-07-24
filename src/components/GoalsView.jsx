@@ -42,7 +42,7 @@ export default function GoalsView({ goals, onAdd, onUpdate, onDelete }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Viagem, Reserva de emergência..."
-              className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500"
+              className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500 bg-white dark:bg-vault-800 dark:text-white"
             />
           </div>
           <div>
@@ -52,7 +52,7 @@ export default function GoalsView({ goals, onAdd, onUpdate, onDelete }) {
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               placeholder="0,00"
-              className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500"
+              className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500 bg-white dark:bg-vault-800 dark:text-white"
             />
           </div>
           <button type="submit" className="bg-vault-900 hover:bg-vault-800 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition">
