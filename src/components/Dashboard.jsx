@@ -42,6 +42,24 @@ const PAGE_TITLES = {
   more: 'Mais',
 }
 
+const MONTH_PAGES = ['overview', 'transactions', 'gym']
+
+function MonthSelector({ month, year, onChangeMonth }) {
+  return (
+    <div className="flex items-center gap-1 bg-white dark:bg-vault-900 border border-vault-900/10 dark:border-white/10 rounded-lg px-1 py-1">
+      <button onClick={() => onChangeMonth(-1)} className="p-1.5 rounded-md text-vault-600 dark:text-vault-300 hover:bg-vault-950/5 dark:hover:bg-white/10">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <span className="text-sm font-medium text-vault-900 dark:text-white px-2 min-w-[130px] text-center capitalize">
+        {monthLabel(year, month)}
+      </span>
+      <button onClick={() => onChangeMonth(1)} className="p-1.5 rounded-md text-vault-600 dark:text-vault-300 hover:bg-vault-950/5 dark:hover:bg-white/10">
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
   const { actor, actorName } = useActor()
@@ -103,7 +121,7 @@ export default function Dashboard() {
 
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-20 bg-[#F7F4EC]/90 dark:bg-vault-950/90 backdrop-blur border-b border-vault-900/5 dark:border-white/10 px-5 py-4 flex items-center justify-between gap-3">
-          <div className="md:hidden min-w-0">
+          <div className="md:hidden min-w-0 flex-1">
             <p className="text-vault-500 dark:text-vault-400 text-xs leading-none">{greetingWord()}</p>
             <p className="font-display text-base text-vault-900 dark:text-white leading-tight truncate">
               {active === 'overview' ? 'Olá, família Caique e Carol' : PAGE_TITLES[active] || ''}
@@ -111,28 +129,25 @@ export default function Dashboard() {
           </div>
           <div className="hidden md:block" />
 
-          <div className="flex items-center gap-2">
-            {['overview', 'transactions', 'gym'].includes(active) && (
-              <div className="flex items-center gap-1 bg-white dark:bg-vault-900 border border-vault-900/10 dark:border-white/10 rounded-lg px-1 py-1">
-                <button onClick={() => changeMonth(-1)} className="p-1.5 rounded-md text-vault-600 dark:text-vault-300 hover:bg-vault-950/5 dark:hover:bg-white/10">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-sm font-medium text-vault-900 dark:text-white px-2 min-w-[100px] sm:min-w-[130px] text-center capitalize">
-                  {monthLabel(year, month)}
-                </span>
-                <button onClick={() => changeMonth(1)} className="p-1.5 rounded-md text-vault-600 dark:text-vault-300 hover:bg-vault-950/5 dark:hover:bg-white/10">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-            <div className="md:hidden flex items-center gap-2">
-              <ThemeToggle className="text-vault-500 dark:text-vault-400 p-1.5" />
-              <ActorSwitcher />
+          {MONTH_PAGES.includes(active) && (
+            <div className="hidden md:flex">
+              <MonthSelector month={month} year={year} onChangeMonth={changeMonth} />
             </div>
+          )}
+
+          <div className="md:hidden flex items-center gap-2 flex-shrink-0">
+            <ThemeToggle className="text-vault-500 dark:text-vault-400 p-1.5" />
+            <ActorSwitcher />
           </div>
         </header>
 
         <main className="p-5 md:p-8 pb-24 md:pb-8 max-w-6xl mx-auto">
+          {MONTH_PAGES.includes(active) && (
+            <div className="md:hidden flex justify-center mb-5">
+              <MonthSelector month={month} year={year} onChangeMonth={changeMonth} />
+            </div>
+          )}
+
           {active === 'overview' && (
             <Overview transactions={transactions} categories={categories} budgets={budgets} gymLogs={gymLogs} month={month} year={year} />
           )}
