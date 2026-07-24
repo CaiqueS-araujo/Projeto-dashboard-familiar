@@ -57,12 +57,21 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
     }
   }
 
+  // Treinos ficam vinculados a quem os criou (calendário selecionado no momento).
+  // Treinos antigos, sem dono definido, continuam aparecendo pros dois — pra não
+  // sumir nada que já existia antes dessa mudança.
+  const personWorkouts = useMemo(
+    () => workouts.filter((w) => !w.person || w.person === person),
+    [workouts, person]
+  )
+
   async function handleAddWorkout(e) {
     e.preventDefault()
     if (!wName.trim()) return
     await onAddWorkout({
       name: wName.trim(),
       exercises: parseExercises(wExercises),
+      person,
     })
     setWName('')
     setWExercises('')
@@ -149,7 +158,7 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
 
       {/* treinos personalizados */}
       <div className="bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-1">
           <h3 className="font-display text-lg text-vault-900 dark:text-white">Treinos personalizados</h3>
           <button
             onClick={() => setShowWorkoutForm((s) => !s)}
@@ -159,6 +168,7 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
             Novo treino
           </button>
         </div>
+        <p className="text-vault-500 dark:text-vault-400 text-xs mb-4">De {ACTORS[person]}</p>
 
         {showWorkoutForm && (
           <form onSubmit={handleAddWorkout} className="mb-4 space-y-3 bg-vault-950/[0.03] dark:bg-white/5 rounded-xl p-4">
@@ -188,11 +198,11 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
           </form>
         )}
 
-        {workouts.length === 0 ? (
+        {personWorkouts.length === 0 ? (
           <p className="text-sm text-vault-500 dark:text-vault-400">Nenhum treino cadastrado ainda.</p>
         ) : (
           <div className="space-y-2">
-            {workouts.map((w) => (
+            {personWorkouts.map((w) => (
               <div key={w.id} className="flex items-start justify-between gap-3 py-2 border-b border-vault-900/5 dark:border-white/10 last:border-0 group">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <Dumbbell className="w-4 h-4 text-gold-500 flex-shrink-0 mt-0.5" strokeWidth={1.75} />
@@ -219,7 +229,7 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
         <WorkoutPicker
           date={picker.date}
           existing={picker.existing}
-          workouts={workouts}
+          workouts={personWorkouts}
           personName={ACTORS[person]}
           onConfirm={async (workoutId, workoutName, completedExercises) => {
             await onMarkDay(picker.date, person, workoutId, workoutName, completedExercises)
