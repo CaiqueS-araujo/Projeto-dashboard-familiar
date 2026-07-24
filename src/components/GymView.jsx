@@ -8,6 +8,14 @@ function pad(n) {
   return String(n).padStart(2, '0')
 }
 
+// Aceita colar uma lista com quebras de linha (bloco de notas) ou separada por vírgula.
+function parseExercises(text) {
+  return text
+    .split(/\r?\n|,/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout, onMarkDay, onUnmarkDay, month, year, defaultPerson }) {
   const [person, setPerson] = useState(defaultPerson || 'caique')
   const [picker, setPicker] = useState(null) // { date } | null
@@ -54,7 +62,7 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
     if (!wName.trim()) return
     await onAddWorkout({
       name: wName.trim(),
-      exercises: wExercises.split(',').map((s) => s.trim()).filter(Boolean),
+      exercises: parseExercises(wExercises),
     })
     setWName('')
     setWExercises('')
@@ -164,13 +172,15 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wide text-vault-500 mb-1.5">Exercícios (separados por vírgula)</label>
-              <input
+              <label className="block text-xs uppercase tracking-wide text-vault-500 mb-1.5">Exercícios (um por linha, ou separados por vírgula)</label>
+              <textarea
                 value={wExercises}
                 onChange={(e) => setWExercises(e.target.value)}
-                placeholder="Supino, Crucifixo, Tríceps corda..."
-                className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500 bg-white dark:bg-vault-800 dark:text-white"
+                placeholder={'Supino reto\nCrucifixo\nTríceps corda'}
+                rows={5}
+                className="w-full border border-vault-900/10 dark:border-white/15 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-gold-500 bg-white dark:bg-vault-800 dark:text-white resize-y"
               />
+              <p className="text-[11px] text-vault-500 dark:text-vault-400 mt-1">Pode colar a lista de outro lugar, cada exercício numa linha.</p>
             </div>
             <button type="submit" className="bg-vault-900 hover:bg-vault-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
               Salvar treino
@@ -211,8 +221,8 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
           existing={picker.existing}
           workouts={workouts}
           personName={ACTORS[person]}
-          onConfirm={async (workoutId, workoutName) => {
-            await onMarkDay(picker.date, person, workoutId, workoutName)
+          onConfirm={async (workoutId, workoutName, completedExercises) => {
+            await onMarkDay(picker.date, person, workoutId, workoutName, completedExercises)
             setPicker(null)
           }}
           onRemove={async () => {
@@ -227,17 +237,51 @@ export default function GymView({ workouts, logs, onAddWorkout, onDeleteWorkout,
 }
 
 function WorkoutPicker({ date, existing, workouts, personName, onConfirm, onRemove, onClose }) {
-  const [selected, setSelected] = useState(existing?.workoutId || '')
+  // 'summary' = dia já marcado, só exibindo o que foi feito
+  // 'choose'  = escolhendo qual treino vai fazer
+  // 'session' = checklist do treino em andamento
+  const [step, setStep] = useState(existing ? 'summary' : 'choose')
+  const [selectedId, setSelectedId] = useState('')
+  const [selectedName, setSelectedName] = useState('')
+  const [checked, setChecked] = useState(new Set())
 
   const [y, m, d] = date.split('-')
   const niceDate = `${d}/${m}/${y}`
 
+  const selectedWorkout = workouts.find((w) => w.id === selectedId)
+
+  function toggleExercise(name) {
+    setChecked((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  function startSession(id, name) {
+    const w = workouts.find((x) => x.id === id)
+    if (id === 'free' || !w?.exercises?.length) {
+      // Treino livre ou sem exercícios cadastrados: nada pra marcar, salva direto.
+      onConfirm(id === 'free' ? null : id, name, [])
+      return
+    }
+    setSelectedId(id)
+    setSelectedName(name)
+    setChecked(new Set())
+    setStep('session')
+  }
+
+  function finishSession() {
+    onConfirm(selectedId, selectedName, Array.from(checked))
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white dark:bg-vault-900 w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6">
+      <div className="bg-white dark:bg-vault-900 w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 max-h-[90vh] overflow-y-auto scrollbar-thin">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-display text-xl text-vault-900 dark:text-white">
-            {existing ? 'Treino do dia' : 'Foi treinar?'}
+            {step === 'session' ? selectedName : step === 'summary' ? 'Treino do dia' : 'Foi treinar?'}
           </h3>
           <button onClick={onClose} className="text-vault-500 hover:text-vault-900 dark:hover:text-white">
             <X className="w-5 h-5" />
@@ -245,12 +289,25 @@ function WorkoutPicker({ date, existing, workouts, personName, onConfirm, onRemo
         </div>
         <p className="text-sm text-vault-500 dark:text-vault-400 mb-5">{personName} · {niceDate}</p>
 
-        {existing ? (
+        {step === 'summary' && existing && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 bg-gold-500/10 border border-gold-500/20 rounded-lg px-3.5 py-3 text-sm text-vault-900 dark:text-white">
               <Check className="w-4 h-4 text-gold-600 flex-shrink-0" />
               {existing.workoutName}
             </div>
+            {existing.completedExercises?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-vault-500 mb-2">Exercícios feitos</p>
+                <div className="space-y-1.5">
+                  {existing.completedExercises.map((ex) => (
+                    <div key={ex} className="flex items-center gap-2 text-sm text-vault-700 dark:text-vault-200">
+                      <Check className="w-3.5 h-3.5 text-gold-500 flex-shrink-0" />
+                      {ex}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               onClick={onRemove}
               className="w-full bg-coral-500/10 text-coral-500 font-semibold text-sm py-2.5 rounded-lg transition hover:bg-coral-500/15"
@@ -258,45 +315,73 @@ function WorkoutPicker({ date, existing, workouts, personName, onConfirm, onRemo
               Remover marcação
             </button>
           </div>
-        ) : (
+        )}
+
+        {step === 'choose' && (
           <div className="space-y-4">
-            <p className="text-xs uppercase tracking-wide text-vault-500">Qual treino você fez?</p>
+            <p className="text-xs uppercase tracking-wide text-vault-500">Qual treino você vai fazer?</p>
             <div className="space-y-1.5 max-h-52 overflow-y-auto scrollbar-thin">
               <button
-                onClick={() => setSelected('free')}
-                className={`w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition ${
-                  selected === 'free'
-                    ? 'bg-gold-500 text-vault-950 font-medium'
-                    : 'bg-vault-950/[0.04] dark:bg-white/5 text-vault-800 dark:text-vault-200'
-                }`}
+                onClick={() => startSession('free', 'Treino livre')}
+                className="w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition bg-vault-950/[0.04] dark:bg-white/5 text-vault-800 dark:text-vault-200"
               >
                 Treino livre / outra atividade
               </button>
               {workouts.map((w) => (
                 <button
                   key={w.id}
-                  onClick={() => setSelected(w.id)}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition ${
-                    selected === w.id
-                      ? 'bg-gold-500 text-vault-950 font-medium'
-                      : 'bg-vault-950/[0.04] dark:bg-white/5 text-vault-800 dark:text-vault-200'
-                  }`}
+                  onClick={() => startSession(w.id, w.name)}
+                  className="w-full text-left px-3.5 py-2.5 rounded-lg text-sm transition bg-vault-950/[0.04] dark:bg-white/5 text-vault-800 dark:text-vault-200"
                 >
                   {w.name}
                 </button>
               ))}
             </div>
-            <button
-              disabled={!selected}
-              onClick={() => {
-                if (selected === 'free') return onConfirm(null, 'Treino livre')
-                const w = workouts.find((x) => x.id === selected)
-                onConfirm(selected, w?.name || 'Treino')
-              }}
-              className="w-full bg-vault-900 hover:bg-vault-800 disabled:opacity-40 text-white font-semibold text-sm py-2.5 rounded-lg transition"
-            >
-              Confirmar treino
-            </button>
+          </div>
+        )}
+
+        {step === 'session' && selectedWorkout && (
+          <div className="space-y-4">
+            <p className="text-xs uppercase tracking-wide text-vault-500">Marque conforme for fazendo</p>
+            <div className="space-y-1.5">
+              {selectedWorkout.exercises.map((ex) => {
+                const done = checked.has(ex)
+                return (
+                  <button
+                    key={ex}
+                    onClick={() => toggleExercise(ex)}
+                    className={`w-full flex items-center gap-2.5 text-left px-3.5 py-2.5 rounded-lg text-sm transition ${
+                      done
+                        ? 'bg-gold-500/15 text-vault-900 dark:text-white'
+                        : 'bg-vault-950/[0.04] dark:bg-white/5 text-vault-800 dark:text-vault-200'
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 border ${
+                        done ? 'bg-gold-500 border-gold-500' : 'border-vault-900/20 dark:border-white/25'
+                      }`}
+                    >
+                      {done && <Check className="w-3 h-3 text-vault-950" />}
+                    </span>
+                    <span className={done ? 'line-through opacity-70' : ''}>{ex}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setStep('choose')}
+                className="flex-1 bg-vault-950/5 dark:bg-white/10 text-vault-700 dark:text-vault-200 font-medium text-sm py-2.5 rounded-lg transition"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={finishSession}
+                className="flex-[2] bg-vault-900 hover:bg-vault-800 text-white font-semibold text-sm py-2.5 rounded-lg transition"
+              >
+                Fim de treino
+              </button>
+            </div>
           </div>
         )}
       </div>

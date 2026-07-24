@@ -362,12 +362,13 @@ export function useGymLogs() {
   }, [])
 
   // Um doc por dia+pessoa (id determinístico), pra nunca duplicar.
-  async function markDay(date, person, workoutId, workoutName) {
+  async function markDay(date, person, workoutId, workoutName, completedExercises = []) {
     return setDoc(doc(db, 'gymLogs', `${date}_${person}`), {
       date,
       person,
       workoutId: workoutId || null,
       workoutName: workoutName || 'Treino livre',
+      completedExercises: completedExercises || [],
     })
   }
 
