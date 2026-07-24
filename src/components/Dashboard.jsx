@@ -134,7 +134,7 @@ export default function Dashboard() {
 
         <main className="p-5 md:p-8 pb-24 md:pb-8 max-w-6xl mx-auto">
           {active === 'overview' && (
-            <Overview transactions={transactions} categories={categories} budgets={budgets} month={month} year={year} />
+            <Overview transactions={transactions} categories={categories} budgets={budgets} gymLogs={gymLogs} month={month} year={year} />
           )}
           {active === 'transactions' && (
             <TransactionsView

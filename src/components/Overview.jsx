@@ -13,6 +13,8 @@ import {
 } from 'recharts'
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle } from 'lucide-react'
 import { formatBRL, monthLabel, actorSplit } from '../utils/format'
+import { useDarkMode } from '../hooks/useDarkMode'
+import { ACTORS } from '../contexts/ActorContext'
 
 function Card({ label, value, icon: Icon, tone }) {
   const tones = {
@@ -32,8 +34,19 @@ function Card({ label, value, icon: Icon, tone }) {
   )
 }
 
-export default function Overview({ transactions, categories, budgets, month, year }) {
+export default function Overview({ transactions, categories, budgets, gymLogs, month, year }) {
   const [range, setRange] = useState(6)
+  const [isDark] = useDarkMode()
+
+  // Cores do gráfico não seguem classes do Tailwind (recharts pinta via SVG
+  // direto), então precisam ser escolhidas na mão conforme o tema.
+  const axisColor = isDark ? '#9DBBA8' : '#0A1F17aa'
+  const gridColor = isDark ? 'rgba(255,255,255,0.12)' : '#0A1F1712'
+  const tooltipStyle = isDark
+    ? { borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0F2E21', color: '#fff' }
+    : { borderRadius: 10, border: '1px solid #eee' }
+  const tooltipTextStyle = isDark ? { color: '#fff' } : undefined
+
   const monthTx = useMemo(
     () =>
       transactions.filter((t) => {
@@ -122,6 +135,21 @@ export default function Overview({ transactions, categories, budgets, month, yea
 
   const overBudgetCount = budgetRows.filter((b) => b.pct >= 100).length
 
+  const gymData = useMemo(() => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const pad = (n) => String(n).padStart(2, '0')
+    function statsFor(p) {
+      let count = 0
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = `${year}-${pad(month + 1)}-${pad(d)}`
+        if ((gymLogs || []).some((l) => l.date === date && l.person === p)) count++
+      }
+      return count
+    }
+    return Object.entries(ACTORS).map(([id, name]) => ({ name, Dias: statsFor(id) }))
+  }, [gymLogs, month, year])
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -181,10 +209,10 @@ export default function Overview({ transactions, categories, budgets, month, yea
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={monthsChart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#0A1F1712" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#0A1F17aa' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#0A1F17aa' }} axisLine={false} tickLine={false} width={40} />
-                <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ borderRadius: 10, border: '1px solid #eee' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: axisColor }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} width={40} />
+                <Tooltip formatter={(v) => formatBRL(v)} contentStyle={tooltipStyle} itemStyle={tooltipTextStyle} labelStyle={tooltipTextStyle} />
                 <Bar dataKey="Receitas" fill="#276B4A" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Despesas" fill="#E27D5F" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -211,7 +239,7 @@ export default function Overview({ transactions, categories, budgets, month, yea
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ borderRadius: 10, border: '1px solid #eee' }} />
+                  <Tooltip formatter={(v) => formatBRL(v)} contentStyle={tooltipStyle} itemStyle={tooltipTextStyle} labelStyle={tooltipTextStyle} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-3 space-y-1.5 max-h-28 overflow-y-auto scrollbar-thin">
@@ -228,6 +256,34 @@ export default function Overview({ transactions, categories, budgets, month, yea
             </>
           )}
         </div>
+      </div>
+
+      <div className="bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl p-5">
+        <h3 className="font-display text-lg text-vault-900 dark:text-white mb-1">Academia da família</h3>
+        <p className="text-vault-500 dark:text-vault-400 text-xs mb-4">Dias treinados em {monthLabel(year, month)}</p>
+        {gymData.every((g) => g.Dias === 0) ? (
+          <EmptyChart text="Ninguém treinou neste mês ainda." />
+        ) : (
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={gymData} layout="vertical" margin={{ left: 4, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: axisColor }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: axisColor }} axisLine={false} tickLine={false} width={60} />
+              <Tooltip
+                formatter={(v) => `${v} ${v === 1 ? 'dia' : 'dias'}`}
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipTextStyle}
+                labelStyle={tooltipTextStyle}
+                cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(10,31,23,0.04)' }}
+              />
+              <Bar dataKey="Dias" radius={[0, 4, 4, 0]} barSize={28}>
+                {gymData.map((g, i) => (
+                  <Cell key={g.name} fill={i === 0 ? '#D4AF5A' : '#276B4A'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {budgetRows.length > 0 && (
