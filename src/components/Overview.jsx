@@ -11,10 +11,11 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle, Check, Flame, Users } from 'lucide-react'
 import { formatBRL, monthLabel, actorSplit } from '../utils/format'
 import { useDarkMode } from '../hooks/useDarkMode'
 import { ACTORS } from '../contexts/ActorContext'
+import { getGymStreak } from '../utils/achievements'
 
 function Card({ label, value, icon: Icon, tone }) {
   const tones = {
@@ -34,7 +35,10 @@ function Card({ label, value, icon: Icon, tone }) {
   )
 }
 
-export default function Overview({ transactions, categories, budgets, gymLogs, month, year }) {
+export default function Overview({
+  transactions, categories, budgets, gymLogs, month, year,
+  habits, habitLogs, onToggleHabit, actor, actorName,
+}) {
   const [range, setRange] = useState(6)
   const [isDark] = useDarkMode()
 
@@ -149,12 +153,68 @@ export default function Overview({ transactions, categories, budgets, gymLogs, m
     return Object.entries(ACTORS).map(([id, name]) => ({ name, Dias: statsFor(id) }))
   }, [gymLogs, month, year])
 
+  const today = new Date().toISOString().slice(0, 10)
+  const myHabits = useMemo(
+    () => (habits || []).filter((h) => h.scope === 'family' || h.owner === actor),
+    [habits, actor]
+  )
+  const habitsDoneToday = (habitLogs || []).filter((l) => l.date === today && l.person === actor).length
+  function isHabitDone(habitId) {
+    return (habitLogs || []).some((l) => l.date === today && l.habitId === habitId && l.person === actor)
+  }
+  const gymStreak = getGymStreak(gymLogs || [], actor)
+
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-display text-2xl text-vault-900 dark:text-white">{monthLabel(year, month)}</h2>
         <p className="text-vault-600 dark:text-vault-300 text-sm">Resumo do mês</p>
+      </div>
+
+      <div className="bg-vault-900 border border-white/5 rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-lg text-white">Hábitos de hoje</h3>
+          {gymStreak > 0 && (
+            <span className="flex items-center gap-1 text-xs text-gold-400 font-medium">
+              <Flame className="w-3.5 h-3.5" />
+              {gymStreak} treinos seguidos
+            </span>
+          )}
+        </div>
+        {myHabits.length === 0 ? (
+          <p className="text-sm text-vault-500">
+            Nenhum hábito cadastrado ainda — crie um na aba Conquistas.
+          </p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-1.5">
+            {myHabits.map((h) => {
+              const done = isHabitDone(h.id)
+              return (
+                <button
+                  key={h.id}
+                  onClick={() => onToggleHabit(today, h.id, actor, !done)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-left transition ${
+                    done ? 'bg-gold-500/15 text-white' : 'bg-white/5 text-vault-300'
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition ${
+                      done ? 'bg-gold-500 border-gold-500 text-vault-950' : 'border-white/20'
+                    }`}
+                  >
+                    {done && <Check className="w-3 h-3" strokeWidth={3} />}
+                  </span>
+                  <span className="flex-1 font-medium">{h.name}</span>
+                  {h.scope === 'family' && <Users className="w-3.5 h-3.5 text-vault-500 flex-shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {myHabits.length > 0 && (
+          <p className="text-xs text-vault-500 pt-3">{habitsDoneToday} de {myHabits.length} feitos hoje</p>
+        )}
       </div>
 
       <div className="md:hidden bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl p-4">

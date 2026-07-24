@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import Sidebar from './Sidebar'
 import MobileTabBar from './MobileTabBar'
-import MoreMenu from './MoreMenu'
+import FinanceiroMenu from './FinanceiroMenu'
 import ActorSwitcher from './ActorSwitcher'
 import ThemeToggle from './ThemeToggle'
 import Overview from './Overview'
@@ -29,6 +29,8 @@ import {
   useGymLogs,
   useGroceryList,
   useAchievementUnlocks,
+  useDailyHabits,
+  useDailyHabitLogs,
 } from '../hooks/useFinanceData'
 import { monthLabel, greetingWord } from '../utils/format'
 
@@ -42,7 +44,7 @@ const PAGE_TITLES = {
   gym: 'Academia',
   mercado: 'Mercado',
   achievements: 'Conquistas',
-  more: 'Mais',
+  financeiro: 'Financeiro',
 }
 
 const MONTH_PAGES = ['overview', 'transactions', 'gym']
@@ -83,6 +85,8 @@ export default function Dashboard() {
   const { logs: gymLogs, markDay, unmarkDay } = useGymLogs()
   const { items: groceryItems, addItem, updateItem, deleteItem, deleteItems } = useGroceryList()
   const { unlocked, unlockAchievement } = useAchievementUnlocks()
+  const { habits, addHabit, deleteHabit } = useDailyHabits()
+  const { logs: habitLogs, toggleHabit } = useDailyHabitLogs()
 
   // Contas fixas: confere sozinho, ao abrir o app, se já lançou as do mês.
   useEffect(() => {
@@ -153,7 +157,19 @@ export default function Dashboard() {
           )}
 
           {active === 'overview' && (
-            <Overview transactions={transactions} categories={categories} budgets={budgets} gymLogs={gymLogs} month={month} year={year} />
+            <Overview
+              transactions={transactions}
+              categories={categories}
+              budgets={budgets}
+              gymLogs={gymLogs}
+              month={month}
+              year={year}
+              habits={habits}
+              habitLogs={habitLogs}
+              onToggleHabit={toggleHabit}
+              actor={actor}
+              actorName={actorName}
+            />
           )}
           {active === 'transactions' && (
             <TransactionsView
@@ -222,9 +238,16 @@ export default function Dashboard() {
               gymLogs={gymLogs}
               unlocked={unlocked}
               onUnlock={unlockAchievement}
+              habits={habits}
+              habitLogs={habitLogs}
+              onAddHabit={addHabit}
+              onDeleteHabit={deleteHabit}
+              onToggleHabit={toggleHabit}
+              actor={actor}
+              actorName={actorName}
             />
           )}
-          {active === 'more' && <MoreMenu onChange={setActive} />}
+          {(active === 'financeiro' || active === 'more') && <FinanceiroMenu onChange={setActive} />}
         </main>
       </div>
 

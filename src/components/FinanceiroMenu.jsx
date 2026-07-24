@@ -1,17 +1,17 @@
-import { Repeat, Tags, Target, TrendingUp, Trophy, ChevronRight } from 'lucide-react'
+import { ArrowLeftRight, Repeat, Tags, Target, TrendingUp, ChevronRight } from 'lucide-react'
 
 const ITEMS = [
+  { id: 'transactions', label: 'Lançamentos', desc: 'Adicione, edite e parcele gastos', icon: ArrowLeftRight },
   { id: 'recurring', label: 'Contas fixas', desc: 'Assinaturas e contas que lançam sozinhas', icon: Repeat },
   { id: 'categories', label: 'Categorias', desc: 'Organize e defina orçamentos', icon: Tags },
   { id: 'goals', label: 'Metas', desc: 'Objetivos de economia', icon: Target },
   { id: 'investments', label: 'Investimentos', desc: 'Sua carteira, tudo num lugar', icon: TrendingUp },
-  { id: 'achievements', label: 'Conquistas', desc: 'Desbloqueie marcos da família', icon: Trophy },
 ]
 
-export default function MoreMenu({ onChange }) {
+export default function FinanceiroMenu({ onChange }) {
   return (
     <div className="space-y-6">
-      <h2 className="font-display text-2xl text-vault-900 dark:text-white">Mais opções</h2>
+      <h2 className="font-display text-2xl text-vault-900 dark:text-white">Financeiro</h2>
       <div className="bg-white dark:bg-vault-900 border border-vault-900/5 dark:border-white/10 rounded-2xl overflow-hidden divide-y divide-vault-900/5 dark:divide-white/10">
         {ITEMS.map((item) => {
           const Icon = item.icon

@@ -464,4 +464,77 @@ export function useGroceryList() {
   return { items, loading, addItem, updateItem, deleteItem, deleteItems }
 }
 
+// ---------- Hábitos / conquistas diárias ----------
+// Cada hábito é criado uma vez (ex: "Beber 2L de água") com um escopo:
+// 'personal' (só quem criou) ou 'family' (aparece pros dois, cada um
+// marca o seu dia independente).
+export function useDailyHabits() {
+  const [habits, setHabits] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const q = query(collection(db, 'dailyHabits'), orderBy('createdAt', 'asc'))
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setHabits(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Erro ao carregar hábitos diários:', err)
+        setLoading(false)
+      }
+    )
+    return unsub
+  }, [])
+
+  async function addHabit(data, actorId) {
+    return addDoc(collection(db, 'dailyHabits'), {
+      name: data.name,
+      scope: data.scope, // 'personal' | 'family'
+      owner: data.scope === 'personal' ? actorId : null,
+      createdAt: serverTimestamp(),
+    })
+  }
+
+  async function deleteHabit(id) {
+    return deleteDoc(doc(db, 'dailyHabits', id))
+  }
+
+  return { habits, loading, addHabit, deleteHabit }
+}
+
+// Um doc por dia+hábito+pessoa (id determinístico), pra nunca duplicar
+// e ser fácil de conferir se já foi marcado.
+export function useDailyHabitLogs() {
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const q = query(collection(db, 'dailyHabitLogs'), orderBy('date', 'desc'))
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setLogs(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Erro ao carregar registro de hábitos:', err)
+        setLoading(false)
+      }
+    )
+    return unsub
+  }, [])
+
+  async function toggleHabit(date, habitId, person, done) {
+    const ref = doc(db, 'dailyHabitLogs', `${date}_${habitId}_${person}`)
+    if (done) {
+      return setDoc(ref, { date, habitId, person, done: true })
+    }
+    return deleteDoc(ref)
+  }
+
+  return { logs, loading, toggleHabit }
+}
+
 
