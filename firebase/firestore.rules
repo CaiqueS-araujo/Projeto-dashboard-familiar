@@ -52,6 +52,10 @@ service cloud.firestore {
       allow read, write: if isFamilia();
     }
 
+    match /achievementUnlocks/{docId} {
+      allow read, write: if isFamilia();
+    }
+
     // Bloqueia qualquer outra coleção por padrão.
     match /{document=**} {
       allow read, write: if false;

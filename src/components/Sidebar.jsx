@@ -1,6 +1,6 @@
 import {
   LayoutGrid, ArrowLeftRight, Tags, Target, LogOut, Repeat, TrendingUp,
-  Dumbbell, ShoppingCart,
+  Dumbbell, ShoppingCart, Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useActor, ACTORS } from '../contexts/ActorContext'
@@ -27,6 +27,10 @@ const SECTIONS = [
   {
     title: 'Mercado',
     items: [{ id: 'mercado', label: 'Lista de compras', icon: ShoppingCart }],
+  },
+  {
+    title: 'Conquistas',
+    items: [{ id: 'achievements', label: 'Conquistas', icon: Trophy }],
   },
 ]
 

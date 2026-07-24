@@ -13,6 +13,7 @@ import RecurringView from './RecurringView'
 import InvestmentsView from './InvestmentsView'
 import GymView from './GymView'
 import MercadoView from './MercadoView'
+import AchievementsView from './AchievementsView'
 import TransactionForm from './TransactionForm'
 import { useAuth } from '../contexts/AuthContext'
 import { useActor } from '../contexts/ActorContext'
@@ -27,6 +28,7 @@ import {
   useWorkouts,
   useGymLogs,
   useGroceryList,
+  useAchievementUnlocks,
 } from '../hooks/useFinanceData'
 import { monthLabel, greetingWord } from '../utils/format'
 
@@ -39,6 +41,7 @@ const PAGE_TITLES = {
   investments: 'Investimentos',
   gym: 'Academia',
   mercado: 'Mercado',
+  achievements: 'Conquistas',
   more: 'Mais',
 }
 
@@ -79,6 +82,7 @@ export default function Dashboard() {
   const { workouts, addWorkout, deleteWorkout } = useWorkouts()
   const { logs: gymLogs, markDay, unmarkDay } = useGymLogs()
   const { items: groceryItems, addItem, updateItem, deleteItem, deleteItems } = useGroceryList()
+  const { unlocked, unlockAchievement } = useAchievementUnlocks()
 
   // Contas fixas: confere sozinho, ao abrir o app, se já lançou as do mês.
   useEffect(() => {
@@ -208,6 +212,16 @@ export default function Dashboard() {
               onDeleteMany={deleteItems}
               onFinalize={handleFinalizePurchase}
               actorName={actorName}
+            />
+          )}
+          {active === 'achievements' && (
+            <AchievementsView
+              transactions={transactions}
+              goals={goals}
+              investments={investments}
+              gymLogs={gymLogs}
+              unlocked={unlocked}
+              onUnlock={unlockAchievement}
             />
           )}
           {active === 'more' && <MoreMenu onChange={setActive} />}

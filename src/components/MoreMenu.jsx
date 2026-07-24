@@ -1,10 +1,11 @@
-import { Repeat, Tags, Target, TrendingUp, ChevronRight } from 'lucide-react'
+import { Repeat, Tags, Target, TrendingUp, Trophy, ChevronRight } from 'lucide-react'
 
 const ITEMS = [
   { id: 'recurring', label: 'Contas fixas', desc: 'Assinaturas e contas que lançam sozinhas', icon: Repeat },
   { id: 'categories', label: 'Categorias', desc: 'Organize e defina orçamentos', icon: Tags },
   { id: 'goals', label: 'Metas', desc: 'Objetivos de economia', icon: Target },
   { id: 'investments', label: 'Investimentos', desc: 'Sua carteira, tudo num lugar', icon: TrendingUp },
+  { id: 'achievements', label: 'Conquistas', desc: 'Desbloqueie marcos da família', icon: Trophy },
 ]
 
 export default function MoreMenu({ onChange }) {

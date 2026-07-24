@@ -379,6 +379,44 @@ export function useGymLogs() {
   return { logs, loading, markDay, unmarkDay }
 }
 
+// ---------- Conquistas: guarda a data em que cada uma foi desbloqueada ----------
+// O progresso em si é sempre calculado na hora (veja src/utils/achievements.js).
+// Aqui só fica registrado o "carimbo" de quando bateu a meta pela primeira vez,
+// pra continuar valendo mesmo que o saldo ou a sequência de treino mudem depois.
+export function useAchievementUnlocks() {
+  const [unlocked, setUnlocked] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const q = collection(db, 'achievementUnlocks')
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const map = {}
+        snap.docs.forEach((d) => {
+          map[d.id] = d.data()
+        })
+        setUnlocked(map)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Erro ao carregar conquistas:', err)
+        setLoading(false)
+      }
+    )
+    return unsub
+  }, [])
+
+  async function unlockAchievement(id, meta) {
+    return setDoc(doc(db, 'achievementUnlocks', id), {
+      unlockedAt: serverTimestamp(),
+      ...meta,
+    })
+  }
+
+  return { unlocked, loading, unlockAchievement }
+}
+
 // ---------- Mercado: lista de compras ----------
 export function useGroceryList() {
   const [items, setItems] = useState([])

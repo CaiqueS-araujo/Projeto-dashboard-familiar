@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { id: 'mercado', label: 'Mercado', icon: ShoppingCart },
 ]
 
-const MORE_IDS = ['recurring', 'categories', 'goals', 'investments']
+const MORE_IDS = ['recurring', 'categories', 'goals', 'investments', 'achievements']
 
 export default function MobileTabBar({ active, onChange }) {
   const isMoreActive = active === 'more' || MORE_IDS.includes(active)
